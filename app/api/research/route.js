@@ -205,7 +205,7 @@ export async function POST(request) {
       try {
         response = await client.messages.create({
           model: "claude-sonnet-4-6",
-          max_tokens: 8000,
+          max_tokens: 16000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
           system: SYSTEM_PROMPT,
           messages: [{ role: "user", content: userQuery }],
