@@ -200,13 +200,25 @@ export async function POST(request) {
 
     const userQuery = buildUserQuery({ company, role, location, seniority, job_function, stage, focus });
 
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 8000,
-      tools: [{ type: "web_search_20250305", name: "web_search" }],
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userQuery }],
-    });
+    let response;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        response = await client.messages.create({
+          model: "claude-sonnet-4-6",
+          max_tokens: 8000,
+          tools: [{ type: "web_search_20250305", name: "web_search" }],
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: userQuery }],
+        });
+        break;
+      } catch (err) {
+        if (attempt < 2 && err?.status === 529) {
+          await new Promise((r) => setTimeout(r, (attempt + 1) * 10000));
+        } else {
+          throw err;
+        }
+      }
+    }
 
     const textBlock = response.content.find((b) => b.type === "text");
     if (!textBlock) {
