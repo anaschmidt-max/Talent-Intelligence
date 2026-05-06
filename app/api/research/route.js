@@ -1,11 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error("ANTHROPIC_API_KEY environment variable is not set");
-}
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 const SYSTEM_PROMPT = `You are a talent market intelligence analyst. A recruiter has submitted a research request. Your job is to conduct live research and return a structured intelligence report.
 
 ## Research methodology
@@ -189,6 +183,11 @@ export async function OPTIONS() {
 
 export async function POST(request) {
   try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return Response.json({ error: "ANTHROPIC_API_KEY is not set on the server." }, { status: 500 });
+    }
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
     const body = await request.json();
     const { company, role, location, seniority, job_function, stage, focus } = body;
 
