@@ -1,5 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error("ANTHROPIC_API_KEY environment variable is not set");
+}
+
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const SYSTEM_PROMPT = `You are a talent market intelligence analyst. A recruiter has submitted a research request. Your job is to conduct live research and return a structured intelligence report.
