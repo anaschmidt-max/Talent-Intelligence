@@ -51,7 +51,7 @@ Claude will systematically research Stripe across all sources and create a struc
 
 ---
 
-## Project structure
+## Project structure 
 
 ```
 talent-intelligence/
