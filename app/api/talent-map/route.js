@@ -113,7 +113,11 @@ export async function POST(request) {
         response = await client.messages.create({
           model: "claude-sonnet-4-6",
           max_tokens: 16000,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
+          tools: [
+            { type: "web_search_20250305", name: "web_search" },
+            { name: "submit_report", description: "Submit the completed talent map report", input_schema: { type: "object", properties: { report: { type: "object" } }, required: ["report"] } },
+          ],
+          tool_choice: { type: "any" },
           system: TALENT_MAP_PROMPT,
           messages: [{ role: "user", content: userQuery }],
         });
@@ -127,21 +131,11 @@ export async function POST(request) {
       }
     }
 
-    const textBlocks = response.content.filter((b) => b.type === "text");
-    const textBlock = textBlocks[textBlocks.length - 1];
-    if (!textBlock) {
-      return Response.json({ error: "No response generated." }, { status: 500 });
-    }
+    const toolUse = response.content.find((b) => b.type === "tool_use" && b.name === "submit_report");
+    const report = toolUse ? toolUse.input.report : null;
 
-    let report;
-    try {
-      const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/);
-      report = JSON.parse(jsonMatch ? jsonMatch[0] : textBlock.text);
-    } catch {
-      return Response.json(
-        { error: "Failed to parse talent map.", raw: textBlock.text.slice(0, 500) },
-        { status: 500 }
-      );
+    if (!report) {
+      return Response.json({ error: "No report returned." }, { status: 500 });
     }
 
     return Response.json(report, {
@@ -170,7 +164,7 @@ function buildQuery({ role, location, seniority, job_function, skills, industry,
 
   parts.push(
     "Search the web now for real companies, real people, and real communities.",
-    "Return ONLY the JSON report object. No explanation or markdown wrapping."
+    "When research is complete, call the submit_report tool with your full report as the argument."
   );
 
   return parts.join("\n");
