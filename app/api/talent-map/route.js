@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { saveTalentMap } from "../../../lib/notion.js";
 
 const TALENT_MAP_PROMPT = `You are a talent mapping analyst for a recruiter. Your job is to find where a specific type of professional can be found — which companies employ them, in what concentrations, and how to reach them.
 
@@ -127,7 +128,8 @@ export async function POST(request) {
       }
     }
 
-    const textBlock = response.content.find((b) => b.type === "text");
+    const textBlocks = response.content.filter((b) => b.type === "text");
+    const textBlock = textBlocks[textBlocks.length - 1];
     if (!textBlock) {
       return Response.json({ error: "No response generated." }, { status: 500 });
     }
@@ -138,10 +140,12 @@ export async function POST(request) {
       report = JSON.parse(jsonMatch ? jsonMatch[0] : textBlock.text);
     } catch {
       return Response.json(
-        { error: "Failed to parse talent map.", raw: textBlock.text },
+        { error: "Failed to parse talent map.", raw: textBlock.text.slice(0, 500) },
         { status: 500 }
       );
     }
+
+    await saveTalentMap(report).catch(() => {});
 
     return Response.json(report, {
       headers: { "Access-Control-Allow-Origin": "*" },

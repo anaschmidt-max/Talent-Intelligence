@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { saveCompanyReport } from "../../../lib/notion.js";
 
 const SYSTEM_PROMPT = `You are a talent market intelligence analyst. A recruiter has submitted a research request. Your job is to conduct live research and return a structured intelligence report.
 
@@ -220,7 +221,8 @@ export async function POST(request) {
       }
     }
 
-    const textBlock = response.content.find((b) => b.type === "text");
+    const textBlocks = response.content.filter((b) => b.type === "text");
+    const textBlock = textBlocks[textBlocks.length - 1];
     if (!textBlock) {
       return Response.json({ error: "No response generated." }, { status: 500 });
     }
@@ -231,10 +233,12 @@ export async function POST(request) {
       report = JSON.parse(jsonMatch ? jsonMatch[0] : textBlock.text);
     } catch {
       return Response.json(
-        { error: "Failed to parse intelligence report.", raw: textBlock.text },
+        { error: "Failed to parse intelligence report.", raw: textBlock.text.slice(0, 500) },
         { status: 500 }
       );
     }
+
+    await saveCompanyReport(report).catch(() => {});
 
     return Response.json(report, {
       headers: { "Access-Control-Allow-Origin": "*" },
