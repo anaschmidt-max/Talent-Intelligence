@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { saveCompanyReport } from "../../../lib/notion.js";
 
 const SYSTEM_PROMPT = `You are a talent market intelligence analyst. A recruiter has submitted a research request. Your job is to conduct live research and return a structured intelligence report.
 
@@ -237,8 +236,6 @@ export async function POST(request) {
         { status: 500 }
       );
     }
-
-    await saveCompanyReport(report).catch(() => {});
 
     return Response.json(report, {
       headers: { "Access-Control-Allow-Origin": "*" },
